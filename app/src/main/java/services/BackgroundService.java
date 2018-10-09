@@ -3,6 +3,7 @@ package services;
 import android.app.Activity;
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -10,8 +11,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -20,6 +23,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.droiddaemon.shakeapp.MainActivity;
+import com.example.droiddaemon.shakeapp.R;
 
 import java.util.Map;
 import java.util.Random;
@@ -59,6 +63,7 @@ public class BackgroundService extends Service implements AccelerometerListener 
 // Called when Motion Detected
 //        Toast.makeText(getBaseContext(), "Motion detected",
 //                Toast.LENGTH_SHORT).show();
+        sendNotification(force);
 
         //create a broadcast to send the toast message
         Intent toastIntent= new Intent(ACTION);
@@ -71,51 +76,49 @@ public class BackgroundService extends Service implements AccelerometerListener 
     /**
      * Create and show a simple notification.
      */
-    private void sendNotification() {
+    private void sendNotification(float force) {
+        String CHANNEL_ID = "my_channel_01";
 
         int notificationId = new Random().nextInt();
+        CharSequence name = "Demo";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId , intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Bitmap icon = BitmapFactory.decodeResource(getResources(),
-                com.javelin.sharedresources.R.drawable.g4s_notification_icon);
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.droid_logic);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new Notification.Builder(this)
-                .setSmallIcon(com.javelin.sharedresources.R.drawable.notif_alert_icon)
-                .setColor(getResources().getColor(com.javelin.sharedresources.R.color.red))
+        Notification notificationBuilder = new Notification.Builder(getApplicationContext())
+                .setSmallIcon(R.drawable.ic_stat_adb)
+                .setColor(Color.CYAN)
                 .setLargeIcon(icon)
-                .setContentTitle(controller.getLocaleMessage(LabelKeys.JOB_ALERT))
-                .setContentText(title)
+                .setContentTitle("Shake Detector")
+                .setContentText(System.currentTimeMillis()+ "- Shake Force: "+force)
                 .setAutoCancel(false)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setSound(defaultSoundUri)
                 .setVibrate(new long[] { 1000, 1000, 1000, 1000, 1000 })
                 .setContentIntent(pendingIntent)
-                .addAction(com.javelin.sharedresources.R.drawable.file_document_box, controller.getLocaleMessage(LabelKeys.VIEW), pendingIntentView)
+                .addAction(R.drawable.ic_stat_adb, "Cancel", pendingIntent)
 //                .addAction(com.javelin.sharedresources.R.drawable.check, controller.getLocaleMessage(LabelKeys.ACCEPT), pendingIntentAccept)
 //                .addAction(com.javelin.sharedresources.R.drawable.abc_ic_clear_material, controller.getLocaleMessage(LabelKeys.DECLINE), pendingIntentDecline)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setPriority(Notification.PRIORITY_MAX)
                 .setWhen(0)
-                .setOngoing(true);
+                .setChannelId(CHANNEL_ID)
+                .setOngoing(true). build();
 
 
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(mChannel);
+        }
 
-        notificationManager.notify(notificationId /* ID of notification */, notificationBuilder.build());
+        notificationManager.notify(notificationId, notificationBuilder);
 
-        //Sending of notification delivery confirmation
-        controller.sendNotificationReceipt(Integer.toString(notificationId));
-
-        Intent notifReceivedIntent = new Intent();
-        notifReceivedIntent.setAction(Constants.BROADCAST_ACTION_NOTIFICATION_RECEIVED);
-        notifReceivedIntent.putExtras(bundle);
-        sendBroadcast(notifReceivedIntent);
     }
 }

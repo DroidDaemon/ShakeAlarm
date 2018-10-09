@@ -1,15 +1,24 @@
 package com.example.droiddaemon.shakeapp;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,6 +27,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Random;
 
 import brodcasts.ResponseBroadcastReceiver;
 import brodcasts.ToastBroadcastReceiver;
@@ -40,12 +51,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView counter;
     ResponseBroadcastReceiver broadcastReceiver;
     public static final long INTERVAL_ONE_MINUTES = 1 * 60 * 1000;
+    String CHANNEL_ID = "my_channel_01";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         counter = (TextView) findViewById(R.id.textView);
@@ -64,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
         //Start Service
         startService(intent);
 //        scheduleAlarm();
+
+//        sendNotification(18);
     }
 
     @Override
@@ -135,4 +146,28 @@ public class MainActivity extends AppCompatActivity {
 //                    Toast.LENGTH_SHORT).show();
 //        }
     }
+    private void sendNotification(float force) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        CharSequence name = "Demo";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+        builder.setSmallIcon(android.R.drawable.ic_dialog_alert);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.journaldev.com/"));
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        builder.setContentIntent(pendingIntent);
+        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
+        builder.setContentTitle("Notifications Title");
+        builder.setContentText("Your notification content here.");
+        builder.setSubText("Tap to view the website.");
+        builder.setChannelId(CHANNEL_ID );
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(mChannel);
+        }
+
+        // Will display the notification in the notification bar
+        notificationManager.notify(1, builder.build());
+    }
+
 }
