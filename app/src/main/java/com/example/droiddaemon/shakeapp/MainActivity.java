@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -20,9 +21,11 @@ import android.widget.Toast;
 
 import brodcasts.ResponseBroadcastReceiver;
 import brodcasts.ToastBroadcastReceiver;
+import listeners.AccelerometerListener;
+import services.AccelerometerManager;
 import services.BackgroundService;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity {
 
     private SensorManager sensorManager;
     private boolean color = false;
@@ -57,111 +60,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         IntentFilter intentFilter= new IntentFilter();
         intentFilter.addAction(BackgroundService.ACTION);
         registerReceiver(broadcastReceiver,intentFilter);
-        scheduleAlarm();
+        Intent intent = new Intent(this, BackgroundService.class);
+        //Start Service
+        startService(intent);
+//        scheduleAlarm();
     }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            getAccelerometer(event);
-        }
-
-    }
-
-    private void getAccelerometer(SensorEvent e) {
-//        float[] values = event.values;
-        //Get x,y and z values
-        float x,y,z;
-        x = e.values[0];
-        y = e.values[1];
-        z = e.values[2];
-
-
-        if (!init) {
-            x1 = x;
-            x2 = y;
-            x3 = z;
-            init = true;
-        } else {
-
-            float diffX = Math.abs(x1 - x);
-            float diffY = Math.abs(x2 - y);
-            float diffZ = Math.abs(x3 - z);
-
-            //Handling ACCELEROMETER Noise
-            if (diffX < ERROR) {
-
-                diffX = (float) 0.0;
-            }
-            if (diffY < ERROR) {
-                diffY = (float) 0.0;
-            }
-            if (diffZ < ERROR) {
-
-                diffZ = (float) 0.0;
-            }
-
-
-            x1 = x;
-            x2 = y;
-            x3 = z;
-
-
-            //Horizontal Shake Detected!
-            if (diffX > diffY) {
-
-                counter.setText("Shake Count : "+ count);
-                count = count+1;
-                Toast.makeText(MainActivity.this, "Shake Detected! = "+count  , Toast.LENGTH_SHORT).show();
-            }
-        }
-
-//        // Movement
-//        float x = values[0];
-//        float y = values[1];
-//        float z = values[2];
-//
-//        float accelationSquareRoot = (x * x + y * y + z * z)
-//                / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
-//        long actualTime = event.timestamp;
-//        if (accelationSquareRoot >= 2) //
-//        {
-//            if (actualTime - lastUpdate < 300) {
-//                return;
-//            }
-//            lastUpdate = actualTime;
-//            Toast.makeText(this, "Device was shuffed", Toast.LENGTH_SHORT)
-//                    .show();
-//            if (color) {
-//                view.setBackgroundColor(Color.GREEN);
-//            } else {
-//                view.setBackgroundColor(Color.RED);
-//            }
-//            color = !color;
-//        }
-
-
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
 
     @Override
     protected void onResume() {
         super.onResume();
-        sensorManager.registerListener(this,sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_NORMAL);
-        IntentFilter intentFilter= new IntentFilter();
-        intentFilter.addAction(BackgroundService.ACTION);
-        registerReceiver(broadcastReceiver,intentFilter);
+//        if (AccelerometerManager.isSupported(this)) {
+//
+//            //Start Accelerometer Listening
+//            AccelerometerManager.startListening(this,15,200);
+//        }
+//        IntentFilter intentFilter= new IntentFilter();
+//        intentFilter.addAction(BackgroundService.ACTION);
+//        registerReceiver(broadcastReceiver,intentFilter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        sensorManager.unregisterListener(this);
         unregisterReceiver(broadcastReceiver);
     }
 
@@ -171,5 +91,48 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long startTime=System.currentTimeMillis(); //alarm starts immediately
         AlarmManager backupAlarmMgr=(AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
         backupAlarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,startTime, INTERVAL_ONE_MINUTES,toastAlarmIntent); // alarm will repeat after every 15 minutes
+    }
+
+//    @Override
+//    public void onAccelerationChanged(float x, float y, float z) {
+//
+//    }
+//
+//    @Override
+//    public void onShake(float force) {
+//
+//        // Called when Motion Detected
+//        Toast.makeText(getBaseContext(), "Motion detected",
+//                Toast.LENGTH_SHORT).show();
+//    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+//        //Check device supported Accelerometer senssor or not
+//        if (AccelerometerManager.isListening()) {
+//
+//            //Start Accelerometer Listening
+//            AccelerometerManager.stopListening();
+//
+//            Toast.makeText(getBaseContext(), "onStop Accelerometer Stoped",
+//                    Toast.LENGTH_SHORT).show();
+//        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        Log.i("Sensor", "Service  distroy");
+//
+//        //Check device supported Accelerometer senssor or not
+//        if (AccelerometerManager.isListening()) {
+//
+//            //Start Accelerometer Listening
+//            AccelerometerManager.stopListening();
+//
+//            Toast.makeText(getBaseContext(), "onDestroy Accelerometer Stoped",
+//                    Toast.LENGTH_SHORT).show();
+//        }
     }
 }
