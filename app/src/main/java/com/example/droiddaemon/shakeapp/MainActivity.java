@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -19,12 +20,15 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.QuickContactBadge;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +39,7 @@ import brodcasts.ToastBroadcastReceiver;
 import listeners.AccelerometerListener;
 import services.AccelerometerManager;
 import services.BackgroundService;
+import util.Constants;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,35 +65,31 @@ public class MainActivity extends AppCompatActivity {
         counter = (TextView) findViewById(R.id.textView);
 //        view  = findViewById(R.id.textView);
 //        view.setBackgroundColor(Color.GREEN);
-
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        lastUpdate  = System.currentTimeMillis();
-
-
+        lastUpdate = System.currentTimeMillis();
         broadcastReceiver = new ResponseBroadcastReceiver();
-        IntentFilter intentFilter= new IntentFilter();
+        IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BackgroundService.ACTION);
-        registerReceiver(broadcastReceiver,intentFilter);
-        Intent intent = new Intent(this, BackgroundService.class);
-        //Start Service
-        startService(intent);
-//        scheduleAlarm();
+        registerReceiver(broadcastReceiver, intentFilter);
+        Button startService = (Button) findViewById(R.id.start);
+        startService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, BackgroundService.class);
+                intent.setAction(Constants.ACTION_START_FOREGROUND_SERVICE);        //Start Service
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(MainActivity.this, intent);
+                } else {
+                    startService(intent);
+                }
+            }
+        });
 
-//        sendNotification(18);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.BROADCAST_ACTION_DISMISS);
+        registerReceiver(notificationReceiver, filter);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-//        if (AccelerometerManager.isSupported(this)) {
-//
-//            //Start Accelerometer Listening
-//            AccelerometerManager.startListening(this,15,200);
-//        }
-//        IntentFilter intentFilter= new IntentFilter();
-//        intentFilter.addAction(BackgroundService.ACTION);
-//        registerReceiver(broadcastReceiver,intentFilter);
-    }
 
     @Override
     protected void onPause() {
@@ -96,78 +97,30 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(broadcastReceiver);
     }
 
-    private void scheduleAlarm() {
-        Intent toastIntent= new Intent(getApplicationContext(), ToastBroadcastReceiver.class);
-        PendingIntent toastAlarmIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, toastIntent,PendingIntent.FLAG_UPDATE_CURRENT);
-        long startTime=System.currentTimeMillis(); //alarm starts immediately
-        AlarmManager backupAlarmMgr=(AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        backupAlarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,startTime, INTERVAL_ONE_MINUTES,toastAlarmIntent); // alarm will repeat after every 15 minutes
-    }
-
-//    @Override
-//    public void onAccelerationChanged(float x, float y, float z) {
-//
-//    }
-//
-//    @Override
-//    public void onShake(float force) {
-//
-//        // Called when Motion Detected
-//        Toast.makeText(getBaseContext(), "Motion detected",
-//                Toast.LENGTH_SHORT).show();
-//    }
-
     @Override
     protected void onStop() {
         super.onStop();
-//        //Check device supported Accelerometer senssor or not
-//        if (AccelerometerManager.isListening()) {
-//
-//            //Start Accelerometer Listening
-//            AccelerometerManager.stopListening();
-//
-//            Toast.makeText(getBaseContext(), "onStop Accelerometer Stoped",
-//                    Toast.LENGTH_SHORT).show();
-//        }
+        unregisterReceiver(notificationReceiver);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-//        Log.i("Sensor", "Service  distroy");
-//
-//        //Check device supported Accelerometer senssor or not
-//        if (AccelerometerManager.isListening()) {
-//
-//            //Start Accelerometer Listening
-//            AccelerometerManager.stopListening();
-//
-//            Toast.makeText(getBaseContext(), "onDestroy Accelerometer Stoped",
-//                    Toast.LENGTH_SHORT).show();
-//        }
-    }
-    private void sendNotification(float force) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-        CharSequence name = "Demo";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
-        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
-        builder.setSmallIcon(android.R.drawable.ic_dialog_alert);
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.journaldev.com/"));
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        builder.setContentIntent(pendingIntent);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
-        builder.setContentTitle("Notifications Title");
-        builder.setContentText("Your notification content here.");
-        builder.setSubText("Tap to view the website.");
-        builder.setChannelId(CHANNEL_ID );
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(mChannel);
+    private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Constants.BROADCAST_ACTION_DISMISS.equals(intent.getAction())) {
+                stopBackGroundService();
+            }
         }
+    };
 
-        // Will display the notification in the notification bar
-        notificationManager.notify(1, builder.build());
+    private void stopBackGroundService() {
+        Intent intent = new Intent(MainActivity.this, BackgroundService.class);
+        intent.setAction(Constants.ACTION_STOP_FOREGROUND_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(this, intent);
+
+        } else {
+            startService(intent);
+        }
     }
-
 }
