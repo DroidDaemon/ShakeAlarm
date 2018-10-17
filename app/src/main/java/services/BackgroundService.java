@@ -1,21 +1,13 @@
 package services;
 
 import android.app.Activity;
-import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -23,21 +15,15 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.droiddaemon.shakeapp.MainActivity;
-import com.example.droiddaemon.shakeapp.R;
-
-import java.util.Map;
-import java.util.Random;
 
 import listeners.AccelerometerListener;
+import util.AccelerometerManager;
 import util.Constants;
+import util.NotificationHelper;
 
 public class BackgroundService extends Service implements AccelerometerListener {
     public static final String ACTION = "com.example.droiddaemon.shakeapp.Receivers.ResponseBroadcastReceiver";
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
 
     @Nullable
     @Override
@@ -71,68 +57,20 @@ public class BackgroundService extends Service implements AccelerometerListener 
     }
 
     @Override
-    public void onShake(float force) {
-        Log.e("backgroundService", "running in back, force= " + force);
+    public void onShake(float force, float speed) {
+        Log.e("backgroundService", "running in back, force= " + force + " speed= " + speed);
 // Called when Motion Detected
 //        Toast.makeText(getBaseContext(), "Motion detected",
 //                Toast.LENGTH_SHORT).show();
-        sendNotification(force);
+//        sendNotification(force);
+        if (force > 25)
+            NotificationHelper.createNotification(force, speed, getApplicationContext());
 
         //create a broadcast to send the toast message
         Intent toastIntent = new Intent(ACTION);
         toastIntent.putExtra("resultCode", Activity.RESULT_OK);
         toastIntent.putExtra("toastMessage", "force = " + force);
         sendBroadcast(toastIntent);
-    }
-
-
-    /**
-     * Create and show a simple notification.
-     */
-    private void sendNotification(float force) {
-        String CHANNEL_ID = "my_channel_02";
-
-        int notificationId = new Random().nextInt();
-        CharSequence name = "Demo";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
-
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.droid_logic);
-
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.drawable.ic_stat_adb)
-                .setColor(Color.CYAN)
-                .setLargeIcon(icon)
-                .setContentTitle("Shake Detector")
-                .setContentText(System.currentTimeMillis() + "- Shake Force: " + force)
-                .setAutoCancel(true)
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setSound(defaultSoundUri)
-                .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000})
-                .setContentIntent(pendingIntent)
-//                .addAction(R.drawable.ic_stat_adb, "Cancel", pendingIntent)
-//                .addAction(com.javelin.sharedresources.R.drawable.check, controller.getLocaleMessage(LabelKeys.ACCEPT), pendingIntentAccept)
-//                .addAction(com.javelin.sharedresources.R.drawable.abc_ic_clear_material, controller.getLocaleMessage(LabelKeys.DECLINE), pendingIntentDecline)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setPriority(Notification.PRIORITY_MAX)
-                .setWhen(0)
-                .setChannelId(CHANNEL_ID)
-                .setOngoing(false);
-
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
-            notificationManager.createNotificationChannel(mChannel);
-        }
-
-        notificationManager.notify(2, notificationBuilder.build());
-
     }
 
     private void stopForegroundService() {
@@ -154,10 +92,9 @@ public class BackgroundService extends Service implements AccelerometerListener 
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Shake Detector";
             String CHANNEL_ID = "my_channel_01";
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT);
+            int importance = NotificationManager.IMPORTANCE_HIGH;
             Intent dismissIntent = new Intent();
             dismissIntent.setAction(Constants.BROADCAST_ACTION_DISMISS);
             PendingIntent pendingIntentDismiss = PendingIntent.getActivity(this, 3, dismissIntent,
@@ -172,9 +109,13 @@ public class BackgroundService extends Service implements AccelerometerListener 
                     .setContentIntent(pendingIntent)
                     .setContentText("Click Dismiss to stop the App");
 
-
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+            notificationManager.createNotificationChannel(mChannel);
             startForeground(1, notification.build());
         }
 
     }
+
 }

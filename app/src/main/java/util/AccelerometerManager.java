@@ -1,4 +1,4 @@
-package services;
+package util;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -17,7 +17,7 @@ public class AccelerometerManager {
 
     /** Accuracy configuration */
     private static float threshold  = 15.0f;
-    private static int interval     = 400;
+    private static int interval     = 3000;
 
     private static Sensor sensor;
     private static SensorManager sensorManager;
@@ -65,8 +65,6 @@ public class AccelerometerManager {
                         Sensor.TYPE_ACCELEROMETER);
 
                 supported = new Boolean(sensors.size() > 0);
-
-
 
             } else {
                 supported = Boolean.FALSE;
@@ -152,6 +150,7 @@ public class AccelerometerManager {
                 private float lastY = 0;
                 private float lastZ = 0;
                 private float force = 0;
+                private float speed = 0;
 
                 public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
@@ -179,12 +178,14 @@ public class AccelerometerManager {
 
                     } else {
                         timeDiff = now - lastUpdate;
-
-                        if (timeDiff > 0) {
+//                        if (timeDiff/ 1000000000 > 3) {
+                        if (timeDiff > 3) {
 
                     /*force = Math.abs(x + y + z - lastX - lastY - lastZ)
                                 / timeDiff;*/
                             force = Math.abs(x + y + z - lastX - lastY - lastZ);
+                            speed = Math.abs(x + y + z - lastX - lastY - lastZ)/timeDiff * 10000;;
+
 
                             if (Float.compare(force, threshold) >0 ) {
                                 //Toast.makeText(Accelerometer.getContext(),
@@ -193,7 +194,7 @@ public class AccelerometerManager {
                                 if (now - lastShake >= interval) {
 
                                     // trigger shake event
-                                    listener.onShake(force);
+                                    listener.onShake(force,speed);
                                 }
                                 else
                                 {
