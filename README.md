@@ -27,7 +27,8 @@ Inside the NotificationHelper class, I’m creating a notification channel:
   Now we need to submit this NotificationChannel object to the NotificationManager, using createNotificationChannel(). 
   
   ```` notificationManager.createNotificationChannel(mChannel)````
-  **Now we can assign a notification to this channel**
+ 
+ **Now we can assign a notification to this channel**
   
   ```` NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_stat_adb)
@@ -45,4 +46,8 @@ Inside the NotificationHelper class, I’m creating a notification channel:
                 .setWhen(0)
                 .setChannelId(CHANNEL_ID);
                 .setOngoing(false);
-                  notificationManager.notify(notificationId, notificationBuilder.build());
+                  notificationManager.notify(notificationId, notificationBuilder.build());````
+                  
+ 
+                  
+                  
