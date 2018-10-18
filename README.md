@@ -83,7 +83,7 @@ In the Mainactivity on clicking "StartService" button will create and start a fo
 The foreground service will show a head-up notification which will pop up at the screen top with max priority.
 We have implemented Accelerometer listener in our service, which will detect any shake occured on the device and post a notification.
 
-The Accelerometer listener will detect shakes and post notification's even if the app is not in forground due to our service implementation.
+The Accelerometer listener will detect shakes and post notification's even if the app is not in foreground due to our service implementation.
 
 Please check out the sample app.
                   
