@@ -1,4 +1,4 @@
-Android 8.0 (API level 26) introduces a variety of new features and capabilities for users and developers. This document highlights what's new in **Notifications** and **Background Services** for developers.
+Android 8.0 (API level 26) introduces a variety of new features and capabilities for users and developers. This document highlights how to use **Notifications** and **Background Services** in a App which target's Oreo.
 
 ## Notifications:
 In OREO, notifications have been redesigned to provide an easier and more consistent way to manage notification behavior and settings. Starting in Android 8.0 (API level 26), all notifications must be assigned to a channel or it will not appear. Let's understand notification channel :  
@@ -30,7 +30,7 @@ Inside the NotificationHelper class, I’m creating a notification channel:
  
  **Now we can assign a notification to this channel**
   
-  ```` NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
+     NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_stat_adb)
                 .setColor(Color.CYAN)
                 .setLargeIcon(icon)
@@ -46,8 +46,22 @@ Inside the NotificationHelper class, I’m creating a notification channel:
                 .setWhen(0)
                 .setChannelId(CHANNEL_ID);
                 .setOngoing(false);
-                  notificationManager.notify(notificationId, notificationBuilder.build());````
+                
+                notificationManager.notify(notificationId, notificationBuilder.build());````
                   
- 
+Refer the NotificationHelper class for complete code.      
+
+## Background Services: 
+
+Services running in the background can consume device resources, potentially resulting in a worse user experience.
+The background services can run at any time, but there is a problem that users find it too hard to recognize it.
+From a user’s point of view, this can be an issue because apps are able to be constantly using resources even when users are not using the app.
+On **Android O**, a background service that will run a few minutes after the app enters the background, and will automatically stop and **onDestroy()** will be called.
+In addition, a call to **startService()** to run the service in the background state is not allowed because an **IllegalStateException** is thrown.
+
+<"Then what can I use on Android 8.0 (API level 26)?"
+
+**Running the foreground service**
+Foreground services are available without restrictions.Foreground service on Android O can be a good choice.
                   
                   
