@@ -59,9 +59,32 @@ From a user’s point of view, this can be an issue because apps are able to be 
 On **Android O**, a background service that will run a few minutes after the app enters the background, and will automatically stop and **onDestroy()** will be called.
 In addition, a call to **startService()** to run the service in the background state is not allowed because an **IllegalStateException** is thrown.
 
-<"Then what can I use on Android 8.0 (API level 26)?"
+>Then how to deal with these limitations on Android 8.0 (API level 26)?
 
 **Running the foreground service**
-Foreground services are available without restrictions.Foreground service on Android O can be a good choice.
+Foreground services are available without restrictions.Foreground service on Android O can be a good choice if your app needs to do some work even after your app is closed.It always run in foreground and can avoid service object being recycled by android system when android OS do not have enough resources.Android foreground service can be interacted by user through notification.It is generally used in music player, file downloader etc.
+
+In the Mainactivity on clicking "StartService" button will create and start a foreground service. 
+      
+      Button startService = (Button) findViewById(R.id.start);
+        startService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, BackgroundService.class);
+                intent.setAction(Constants.ACTION_START_FOREGROUND_SERVICE);        //Start Service
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(MainActivity.this, intent);
+                } else {
+                    startService(intent);
+                }
+            }
+        });
+
+The foreground service will show a head-up notification which will pop up at the screen top with max priority.
+We have implemented Accelerometer listener in our service, which will detect any shake occured on the device and post a notification.
+
+The Accelerometer listener will detect shakes and post notification's even if the app is not in forground due to our service implementation.
+
+Please check out the sample app.
                   
                   
